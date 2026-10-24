@@ -6,10 +6,10 @@ import { formatINR, unitPrice } from "@/lib/pricing";
 import { cartKey } from "@/lib/store";
 import type { TableCtx } from "./useTable";
 
-export function SquadSheet({ ctx, open, onClose }: { ctx: TableCtx; open: boolean; onClose: () => void }) {
+export function SquadSheet({ ctx, open, onClose, initialCode }: { ctx: TableCtx; open: boolean; onClose: () => void; initialCode?: string }) {
   const { venue, squad, set, state, menu, lines } = ctx;
   const [name, setName] = useState(state.customer.myName ?? "");
-  const [code, setCode] = useState("");
+  const [code, setCode] = useState(initialCode ?? "");
   if (!venue) return null;
   const tableNo = ctx.table?.number ?? 0;
   const link = squad && typeof window !== "undefined" ? `${window.location.origin}/v/${venue.slug}/t/${tableNo}?squad=${squad.code}` : "";
