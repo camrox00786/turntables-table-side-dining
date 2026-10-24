@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { seedState } from "./demo-data";
-import type { ActiveOffer, CartLine, Weather } from "./types";
+import type { CartLine, Weather } from "./types";
 
 /**
  * Demo adapter: all state lives in the browser (localStorage) and syncs across tabs.
@@ -8,7 +8,7 @@ import type { ActiveOffer, CartLine, Weather } from "./types";
  */
 export interface CustomerSession {
   weather: Weather | null;
-  activeOffer?: ActiveOffer;
+  offerTimers: Record<string, number>; // campaignId -> expiresAt
   offerHistory: Record<string, "expired" | "dismissed" | "used">;
   spinCount: number;
   phone?: string;
@@ -29,7 +29,7 @@ export function initialState(): AppState {
   return {
     ...seedState(),
     carts: {},
-    customer: { weather: null, offerHistory: {}, spinCount: 0, myOrderIds: [], useLoyaltyReward: false },
+    customer: { weather: null, offerTimers: {}, offerHistory: {}, spinCount: 0, myOrderIds: [], useLoyaltyReward: false },
   };
 }
 
