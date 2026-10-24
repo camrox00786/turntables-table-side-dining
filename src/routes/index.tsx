@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { ArrowRight, CloudRain, Dices, Laptop, QrCode, Stamp, Users } from "lucide-react";
 import hero from "@/assets/hero.jpg";
+import { ScrollExpansionHero } from "@/components/landing/ScrollExpansionHero";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -33,8 +34,8 @@ function Landing() {
         <span className="font-display text-2xl font-black">turn<span className="text-primary">tables</span></span>
         <Link to="/dashboard" search={{ tab: "overview" }} className="rounded-full border border-input px-4 py-2 text-sm font-semibold hover:bg-secondary">Owner dashboard</Link>
       </nav>
-      <section className="mx-auto grid max-w-6xl items-center gap-10 px-5 py-10 md:grid-cols-2 md:py-20">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+      <ScrollExpansionHero image={hero} imageAlt="Craft beer, loaded fries and a burger at a neon-lit taproom">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-xl">
           <p className="mb-4 text-sm font-bold uppercase tracking-[0.25em] text-accent">Made for Bengaluru's tables</p>
           <h1 className="text-5xl font-black leading-[0.95] md:text-7xl">
             Scan. Order. <span className="text-primary">Sip.</span>
@@ -51,8 +52,7 @@ function Landing() {
             </Link>
           </div>
         </motion.div>
-        <motion.img initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} src={hero} alt="Craft beer, loaded fries and a burger at a neon-lit taproom" width={1280} height={832} className="rounded-3xl border border-border object-cover" />
-      </section>
+      </ScrollExpansionHero>
       <section className="mx-auto max-w-6xl px-5 pb-24">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {FEATURES.map((f, i) => (

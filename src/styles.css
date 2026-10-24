@@ -94,3 +94,29 @@
   background-image: radial-gradient(oklch(1 0 0 / 4%) 1px, transparent 1px);
   background-size: 4px 4px;
 }
+
+.landing-scroll-hero__media {
+  width: 100%;
+  border-radius: var(--landing-hero-radius, 1.5rem);
+}
+
+.landing-scroll-hero__scrim {
+  background: linear-gradient(90deg, var(--background) 0%, color-mix(in oklch, var(--background) 76%, transparent) 42%, transparent 100%);
+}
+
+@media (min-width: 768px) {
+  .landing-scroll-hero__media {
+    width: var(--landing-hero-width, 52%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-scroll-hero__media {
+    width: 100%;
+    transform: none !important;
+  }
+
+  .landing-scroll-hero__media img {
+    transform: none !important;
+  }
+}
