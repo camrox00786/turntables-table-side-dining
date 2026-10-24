@@ -10,11 +10,17 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as VVenueTTableRouteImport } from './routes/v.$venue.t.$table'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const VVenueTTableRoute = VVenueTTableRouteImport.update({
@@ -25,27 +31,31 @@ const VVenueTTableRoute = VVenueTTableRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
   '/v/$venue/t/$table': typeof VVenueTTableRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
   '/v/$venue/t/$table': typeof VVenueTTableRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
   '/v/$venue/t/$table': typeof VVenueTTableRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/v/$venue/t/$table'
+  fullPaths: '/' | '/dashboard' | '/v/$venue/t/$table'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/v/$venue/t/$table'
-  id: '__root__' | '/' | '/v/$venue/t/$table'
+  to: '/' | '/dashboard' | '/v/$venue/t/$table'
+  id: '__root__' | '/' | '/dashboard' | '/v/$venue/t/$table'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DashboardRoute: typeof DashboardRoute
   VVenueTTableRoute: typeof VVenueTTableRoute
 }
 
@@ -56,6 +66,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/v/$venue/t/$table': {
@@ -70,6 +87,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DashboardRoute: DashboardRoute,
   VVenueTTableRoute: VVenueTTableRoute,
 }
 export const routeTree = rootRouteImport
