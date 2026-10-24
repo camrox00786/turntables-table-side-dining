@@ -253,7 +253,7 @@ export function TablesQR({ venueId, onVenueCreated }: { venueId: string; onVenue
       d.venues.push({ id, slug, name: n, kind: "Restaurant", area: "Bengaluru", tagline: "" });
       d.menu.push(...d.menu.filter((m) => m.venueId === "v1").map((m) => ({ ...m, id: m.id.replace("v1-", `${id}-`), venueId: id })));
       for (let i = 1; i <= 4; i++) d.tables.push({ id: `${id}-t${i}`, venueId: id, number: i, seats: 4 });
-      const c = structuredClone(d.configs.v1);
+      const c = structuredClone(d.configs["v1"]);
       c.campaigns.forEach((x) => { x.id = x.id.replace("v1-", `${id}-`); x.itemIds = x.itemIds.map((y) => y.replace("v1-", `${id}-`)); x.redeemed = 0; });
       c.mystery.rewardItemId = c.mystery.rewardItemId.replace("v1-", `${id}-`);
       c.mystery.redeemed = 0;

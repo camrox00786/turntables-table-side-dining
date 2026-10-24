@@ -5,8 +5,8 @@ export const DEMO_OTP = "1234";
 // Fixed reference time keeps the seed deterministic for SSR and tests.
 const BASE = Date.UTC(2026, 9, 23, 12, 0, 0);
 
-type Seed = Omit<MenuItem, "id" | "venueId" | "modifiers" | "vibes" | "mysteryReason"> &
-  Partial<Pick<MenuItem, "modifiers" | "vibes" | "mysteryReason">> & { key: string };
+type Seed = Omit<MenuItem, "id" | "venueId" | "modifiers" | "vibes" | "mysteryReason" | "mysteryEligible"> &
+  Partial<Pick<MenuItem, "modifiers" | "vibes" | "mysteryReason" | "mysteryEligible">> & { key: string };
 
 const milk = [
   { id: "oat", name: "Oat milk", price: 40 },
