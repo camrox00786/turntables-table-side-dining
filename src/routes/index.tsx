@@ -31,7 +31,7 @@ function Landing() {
     <div className="min-h-screen">
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5">
         <span className="font-display text-2xl font-black">turn<span className="text-primary">tables</span></span>
-        <Link to="/dashboard" className="rounded-full border border-input px-4 py-2 text-sm font-semibold hover:bg-secondary">Owner dashboard</Link>
+        <Link to="/dashboard" search={{ tab: "overview" }} className="rounded-full border border-input px-4 py-2 text-sm font-semibold hover:bg-secondary">Owner dashboard</Link>
       </nav>
       <section className="mx-auto grid max-w-6xl items-center gap-10 px-5 py-10 md:grid-cols-2 md:py-20">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
