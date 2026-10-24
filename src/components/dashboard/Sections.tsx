@@ -26,7 +26,7 @@ export function Analytics({ venueId }: { venueId: string }) {
   const accounts = Object.values(state.loyalty).filter((a) => a.venueId === venueId);
   const stamps = accounts.reduce((a, x) => a + x.stampedOrderIds.length, 0);
   const redeemed = accounts.reduce((a, x) => a + x.rewards.filter((r) => r.redeemedAt).length, 0);
-  const cfg = state.configs[venueId];
+  const cfg = state.configs[venueId]!;
 
   const daily = useMemo(() => {
     const m = new Map<string, number>();
@@ -120,7 +120,7 @@ export function OrdersBoard({ venueId }: { venueId: string }) {
         const k = `${venueId}:${o.phone}`;
         const acc = d.loyalty[k];
         if (acc) {
-          const res = applyStamp(acc, o, d.configs[venueId].loyalty, Date.now());
+          const res = applyStamp(acc, o, d.configs[venueId]!.loyalty, Date.now());
           d.loyalty[k] = res.account;
           if (res.stamped) msg += " · loyalty stamp issued";
           if (res.unlocked) msg += " · reward unlocked";
@@ -299,11 +299,11 @@ export function TablesQR({ venueId, onVenueCreated }: { venueId: string; onVenue
 /* ---------------- Promotions & loyalty ---------------- */
 export function Promotions({ venueId }: { venueId: string }) {
   const { state, set } = useStore();
-  const cfg = state.configs[venueId];
+  const cfg = state.configs[venueId]!;
   const menu = state.menu.filter((m) => m.venueId === venueId);
   const accounts = Object.values(state.loyalty).filter((a) => a.venueId === venueId);
   const cats = Array.from(new Set(menu.map((m) => m.category)));
-  const upd = (fn: (c: typeof cfg) => void) => set((d) => fn(d.configs[venueId]));
+  const upd = (fn: (c: typeof cfg) => void) => set((d) => fn(d.configs[venueId]!));
   const num = (v: string, min = 0) => Math.max(min, Number(v) || 0);
 
   return (
