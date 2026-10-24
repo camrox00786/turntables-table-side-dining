@@ -4,12 +4,14 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Clock, CloudRain, Coffee, Dices, Laptop, ShoppingBag, Stamp, Sun, ThermometerSun, Users, X, Zap, Plus } from "lucide-react";
 import { Btn, Pill, SimBadge, Switch } from "@/components/kit";
 import { useTable } from "@/components/customer/useTable";
+import { LiquidMetalButton } from "@/components/customer/LiquidMetalButton";
 import { ItemSheet } from "@/components/customer/ItemSheet";
 import { CartSheet } from "@/components/customer/CartSheet";
 import { MysteryWheel } from "@/components/customer/MysteryWheel";
 import { SquadSheet } from "@/components/customer/SquadSheet";
 import { LoyaltySheet } from "@/components/customer/LoyaltySheet";
 import { OrderTracker } from "@/components/customer/OrderTracker";
+import { SilkBackdrop } from "@/components/customer/SilkBackdrop";
 import { CATEGORY_LABEL, IMAGES } from "@/lib/images";
 import { formatINR, quickItems } from "@/lib/pricing";
 import type { MenuItem, Vibe, Weather } from "@/lib/types";
@@ -82,9 +84,10 @@ function MenuPage() {
     <div className="mx-auto min-h-screen max-w-2xl pb-32">
       {/* Header */}
       <header className="relative overflow-hidden">
-        <img src={IMAGES.hero} alt="" className="h-48 w-full object-cover opacity-60" width={1280} height={832} />
-        <div className="absolute inset-0 bg-gradient-to-b from-background/20 via-background/60 to-background" />
-        <div className="absolute inset-x-0 bottom-0 p-5">
+        <SilkBackdrop />
+        <img src={IMAGES.hero} alt="" className="relative z-[1] h-48 w-full object-cover opacity-45 mix-blend-screen" width={1280} height={832} />
+        <div className="absolute inset-0 z-[2] bg-gradient-to-b from-background/10 via-background/55 to-background" />
+        <div className="absolute inset-x-0 bottom-0 z-[3] p-5">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">{venue.kind} · {venue.area}</p>
           <h1 className="text-4xl font-black">{venue.name}</h1>
           <div className="mt-2 flex items-center gap-2 text-sm">
@@ -92,7 +95,7 @@ function MenuPage() {
             {squad && <span className="rounded-full bg-accent px-2.5 py-0.5 font-bold text-accent-foreground">{squad.code} · {squad.participants.length} in squad</span>}
           </div>
         </div>
-        <div className="absolute right-4 top-4 flex gap-2">
+        <div className="absolute right-4 top-4 z-[3] flex gap-2">
           <button aria-label="Frequent Sipper loyalty" onClick={() => setSheet("loyalty")} className="rounded-full bg-background/70 p-2.5 backdrop-blur"><Stamp className="h-5 w-5" /></button>
           <button aria-label="SquadTab" onClick={() => setSheet("squad")} className="rounded-full bg-background/70 p-2.5 backdrop-blur"><Users className="h-5 w-5" /></button>
         </div>
@@ -167,13 +170,13 @@ function MenuPage() {
 
         {/* Mystery Tap */}
         {config!.mystery.enabled && (
-          <button onClick={() => setSheet("mystery")} className="group flex w-full items-center justify-between rounded-2xl bg-primary p-4 text-left text-primary-foreground glow-lime">
+          <LiquidMetalButton aria-label="Open Mystery Tap" onClick={() => setSheet("mystery")}>
             <div>
               <p className="font-display text-2xl font-black">Mystery Tap</p>
-              <p className="text-sm opacity-80">Spin for a blind date with the menu</p>
+              <p className="text-sm text-white/75">Spin for a blind date with the menu</p>
             </div>
-            <Dices className="h-10 w-10 transition group-hover:rotate-45" />
-          </button>
+            <Dices className="relative z-10 h-10 w-10 transition group-hover:rotate-45" />
+          </LiquidMetalButton>
         )}
 
         {/* My orders */}
