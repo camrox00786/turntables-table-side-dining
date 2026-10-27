@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { Analytics, MenuEditor, OrdersBoard, Promotions, TablesQR } from "@/components/dashboard/Sections";
+import { ProductionDashboard } from "@/components/dashboard/ProductionDashboard";
+import { dataMode } from "@/lib/supabase";
 
 type Tab = "overview" | "orders" | "menu" | "tables" | "promos";
 
@@ -33,6 +35,11 @@ const TABS: { id: Tab; label: string; icon: typeof BarChart3 }[] = [
 ];
 
 function Dashboard() {
+  if (dataMode === "supabase") return <ProductionDashboard />;
+  return <DemoDashboard />;
+}
+
+function DemoDashboard() {
   const { tab } = Route.useSearch();
   const { state, reset } = useStore();
   const [venueId, setVenueId] = useState("v1");
