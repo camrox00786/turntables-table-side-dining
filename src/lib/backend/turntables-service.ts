@@ -35,6 +35,15 @@ export type ProductionRestaurant = {
   slug: string;
 };
 
+export type ProductionDiningTable = {
+  id: string;
+  branch_id: string;
+  table_number: number;
+  display_name: string | null;
+  seats: number;
+  status: "active" | "inactive" | "archived";
+};
+
 export type MenuItemInput = {
   branch_id: string;
   category_id: string | null;
@@ -60,6 +69,31 @@ export type BillSummary = {
   paid_minor: number;
   outstanding_minor: number;
   status: string;
+};
+
+export type CustomerSessionContext = {
+  session_id: string;
+  member_id: string;
+  restaurant_id: string;
+  restaurant_name: string;
+  restaurant_slug: string;
+  branch_id: string;
+  branch_name: string;
+  branch_slug: string;
+  table_id: string;
+  table_number: number;
+  currency: string;
+};
+
+export type CustomerCartLine = {
+  id: string;
+  menu_item_id: string;
+  variant_id: string | null;
+  modifier_ids: string[];
+  quantity: number;
+  name: string;
+  price_minor: number;
+  available: boolean;
 };
 
 export async function signInOwner(email: string, password: string) {
@@ -130,6 +164,57 @@ export async function loadOwnerBranches() {
       restaurant: restaurant as ProductionRestaurant,
     };
   });
+}
+
+export async function loadBranchTables(branchId: string) {
+  const supabase = requireSupabaseClient();
+  const { data, error } = await supabase
+    .from("dining_tables")
+    .select("id, branch_id, table_number, display_name, seats, status")
+    .eq("branch_id", branchId)
+    .neq("status", "archived")
+    .order("table_number");
+  if (error) throw error;
+  return (data ?? []) as ProductionDiningTable[];
+}
+
+export async function createDiningTable(input: {
+  branch_id: string;
+  table_number: number;
+  display_name?: string;
+  seats: number;
+}) {
+  const supabase = requireSupabaseClient();
+  const { data, error } = await supabase
+    .from("dining_tables")
+    .insert({
+      branch_id: input.branch_id,
+      table_number: input.table_number,
+      display_name: input.display_name?.trim() || null,
+      seats: input.seats,
+      status: "active",
+    })
+    .select("id, branch_id, table_number, display_name, seats, status")
+    .single();
+  if (error) throw error;
+  return data as ProductionDiningTable;
+}
+
+export async function updateDiningTable(
+  id: string,
+  input: Partial<Pick<ProductionDiningTable, "table_number" | "display_name" | "seats" | "status">>,
+) {
+  const supabase = requireSupabaseClient();
+  const { error } = await supabase
+    .from("dining_tables")
+    .update({
+      ...input,
+      ...(input.display_name !== undefined
+        ? { display_name: input.display_name?.trim() || null }
+        : {}),
+    })
+    .eq("id", id);
+  if (error) throw error;
 }
 
 export async function loadEditableMenu(branchId: string) {
@@ -300,4 +385,75 @@ export async function loadBillForSession(sessionId: string) {
     .maybeSingle();
   if (error) throw error;
   return data as BillSummary | null;
+}
+
+export async function openCustomerSession(input: {
+  restaurantSlug: string;
+  branchSlug?: string;
+  tableNumber: number;
+  customerToken: string;
+  displayName?: string;
+}) {
+  const supabase = requireSupabaseClient();
+  const { data, error } = await supabase.rpc("open_customer_session", {
+    p_restaurant_slug: input.restaurantSlug,
+    p_branch_slug: input.branchSlug ?? null,
+    p_table_number: input.tableNumber,
+    p_customer_token: input.customerToken,
+    p_display_name: input.displayName ?? null,
+  });
+  if (error) throw error;
+  return data as CustomerSessionContext;
+}
+
+export async function loadCustomerCart(customerToken: string, sessionId: string) {
+  const supabase = requireSupabaseClient();
+  const { data, error } = await supabase.rpc("get_customer_cart", {
+    p_customer_token: customerToken,
+    p_session_id: sessionId,
+  });
+  if (error) throw error;
+  return (data ?? []) as CustomerCartLine[];
+}
+
+export async function addCustomerCartItem(input: {
+  customerToken: string;
+  sessionId: string;
+  menuItemId: string;
+  quantity?: number;
+  variantId?: string;
+  modifierIds?: string[];
+}) {
+  const supabase = requireSupabaseClient();
+  const { data, error } = await supabase.rpc("add_customer_cart_item", {
+    p_customer_token: input.customerToken,
+    p_session_id: input.sessionId,
+    p_menu_item_id: input.menuItemId,
+    p_quantity: input.quantity ?? 1,
+    p_variant_id: input.variantId ?? null,
+    p_modifier_ids: input.modifierIds ?? [],
+  });
+  if (error) throw error;
+  return (data ?? []) as CustomerCartLine[];
+}
+
+export async function placeCustomerOrder(
+  customerToken: string,
+  sessionId: string,
+  idempotencyKey: string,
+) {
+  const supabase = requireSupabaseClient();
+  const { data, error } = await supabase.rpc("place_customer_order", {
+    p_customer_token: customerToken,
+    p_session_id: sessionId,
+    p_idempotency_key: idempotencyKey,
+  });
+  if (error) throw error;
+  return data as {
+    order_id: string;
+    order_number: number;
+    status: string;
+    total_minor?: number;
+    currency?: string;
+  };
 }

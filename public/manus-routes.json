@@ -1,0 +1,7 @@
+{
+  "routes": [
+    { "path": "/", "title": "Turntables — Scan your table QR" },
+    { "path": "/dashboard", "title": "Owner dashboard · Turntables" },
+    { "path": "/v/:venue/t/:table", "title": "Customer table menu · Turntables" }
+  ]
+}

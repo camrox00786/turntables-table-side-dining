@@ -1,18 +1,23 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { toast } from "sonner";
+import { QRCodeSVG } from "qrcode.react";
 import { Btn, Card } from "@/components/kit";
 import {
   archiveMenuItem,
   bootstrapOwner,
+  createDiningTable,
   createMenuCategory,
   createMenuItem,
   createMenuModifier,
+  loadBranchTables,
   loadEditableMenu,
   loadOwnerBranches,
   signInOwner,
   signOutOwner,
   signUpOwner,
   updateMenuItem,
+  updateDiningTable,
+  type ProductionDiningTable,
   type BranchMenuCategory,
 } from "@/lib/backend/turntables-service";
 import { dataMode, getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase";
@@ -126,12 +131,178 @@ export function ProductionDashboard() {
           <p className="text-sm text-muted-foreground">Loading persisted menu…</p>
         </Card>
       ) : (
-        <ProductionMenuEditor
-          branchId={branchId}
-          menu={menu}
-          onRefresh={() => loadEditableMenu(branchId).then(setMenu)}
-        />
+        <div className="space-y-5">
+          <ProductionTables branch={selected.branch} restaurant={selected.restaurant} />
+          <ProductionMenuEditor
+            branchId={branchId}
+            menu={menu}
+            onRefresh={() => loadEditableMenu(branchId).then(setMenu)}
+          />
+        </div>
       )}
+    </div>
+  );
+}
+
+function ProductionTables({
+  branch,
+  restaurant,
+}: {
+  branch: BranchChoice["branch"];
+  restaurant: BranchChoice["restaurant"];
+}) {
+  const [tables, setTables] = useState<ProductionDiningTable[]>([]);
+  const [number, setNumber] = useState("");
+  const [name, setName] = useState("");
+  const [seats, setSeats] = useState("2");
+  const [busy, setBusy] = useState(false);
+
+  async function refresh() {
+    setTables(await loadBranchTables(branch.id));
+  }
+
+  useEffect(() => {
+    refresh().catch((error) => toast.error(error instanceof Error ? error.message : "Could not load tables"));
+  }, [branch.id]);
+
+  async function addTable(event: FormEvent) {
+    event.preventDefault();
+    const tableNumber = Number(number);
+    const seatCount = Number(seats);
+    if (!Number.isInteger(tableNumber) || tableNumber < 1 || !Number.isInteger(seatCount) || seatCount < 1) {
+      toast.error("Enter a positive table number and seat count");
+      return;
+    }
+    setBusy(true);
+    try {
+      await createDiningTable({ branch_id: branch.id, table_number: tableNumber, display_name: name, seats: seatCount });
+      setNumber("");
+      setName("");
+      await refresh();
+      toast.success(`Table ${tableNumber} created`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not create table");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Card>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-xs uppercase tracking-widest text-muted-foreground">Production management</p>
+          <h2 className="mt-1 text-xl font-bold">Tables &amp; QR Codes</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {branch.name} · Each QR opens this restaurant and branch directly — no homepage required.
+          </p>
+        </div>
+        <form onSubmit={addTable} className="grid w-full gap-2 sm:w-auto sm:grid-cols-[6rem_10rem_5rem_auto]">
+          <input required type="number" min="1" aria-label="Table number" placeholder="Table #" value={number} onChange={(e) => setNumber(e.target.value)} className={inputCls} />
+          <input aria-label="Table name" placeholder="Name (optional)" value={name} onChange={(e) => setName(e.target.value)} className={inputCls} />
+          <input required type="number" min="1" aria-label="Seats" placeholder="Seats" value={seats} onChange={(e) => setSeats(e.target.value)} className={inputCls} />
+          <Btn type="submit" disabled={busy}>{busy ? "Saving…" : "Add table"}</Btn>
+        </form>
+      </div>
+      <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {tables.length === 0 && <p className="text-sm text-muted-foreground">No production tables yet.</p>}
+        {tables.map((table) => <ProductionTableCard key={table.id} table={table} branch={branch} restaurant={restaurant} onRefresh={refresh} />)}
+      </div>
+    </Card>
+  );
+}
+
+function ProductionTableCard({
+  table,
+  branch,
+  restaurant,
+  onRefresh,
+}: {
+  table: ProductionDiningTable;
+  branch: BranchChoice["branch"];
+  restaurant: BranchChoice["restaurant"];
+  onRefresh: () => Promise<void>;
+}) {
+  const [number, setNumber] = useState(String(table.table_number));
+  const [name, setName] = useState(table.display_name ?? "");
+  const [seats, setSeats] = useState(String(table.seats));
+  const active = table.status === "active";
+  const url = `${window.location.origin}/v/${restaurant.slug}/t/${table.table_number}?branch=${encodeURIComponent(branch.slug)}`;
+  const svgId = `table-qr-${table.id}`;
+
+  async function save() {
+    try {
+      await updateDiningTable(table.id, { table_number: Number(number), display_name: name, seats: Number(seats) });
+      await onRefresh();
+      toast.success(`Table ${number} updated`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not update table");
+    }
+  }
+
+  async function toggleStatus() {
+    try {
+      await updateDiningTable(table.id, { status: active ? "inactive" : "active" });
+      await onRefresh();
+      toast.success(active ? "Table deactivated" : "Table activated");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not update table status");
+    }
+  }
+
+  function downloadQr() {
+    const svg = document.getElementById(svgId);
+    if (!svg) return;
+    const blob = new Blob([new XMLSerializer().serializeToString(svg)], { type: "image/svg+xml" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `${restaurant.slug}-${branch.slug}-table-${table.table_number}.svg`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+  }
+
+  function printQr() {
+    const svg = document.getElementById(svgId)?.outerHTML;
+    if (!svg) return;
+    const printWindow = window.open("", "_blank", "noopener,noreferrer");
+    if (!printWindow) return;
+    printWindow.document.write(`<html><body style="font-family:sans-serif;text-align:center;padding:32px"><h1>${restaurant.name}</h1><h2>${branch.name} · Table ${table.table_number}</h2>${svg}<p>${url}</p><script>window.onload=()=>window.print()<\/script></body></html>`);
+    printWindow.document.close();
+  }
+
+  return (
+    <div className={`rounded-xl border border-border p-3 ${!active ? "opacity-60" : ""}`}>
+      <div className="flex items-center justify-between gap-2">
+        <div><p className="font-display text-lg font-black">Table {table.table_number}</p><p className="text-xs text-muted-foreground">{active ? "Active" : "Inactive"} · {table.seats} seats</p></div>
+        <span className="rounded-full bg-secondary px-2 py-1 text-[10px] uppercase tracking-widest">{active ? "Live" : "Off"}</span>
+      </div>
+      <div className="mx-auto my-3 w-fit rounded-xl bg-foreground p-2"><QRCodeSVG id={svgId} value={url} size={150} bgColor="transparent" fgColor="var(--background)" /></div>
+      <a href={url} target="_blank" rel="noreferrer" className="block break-all text-[11px] text-primary underline">{url}</a>
+      <div className="mt-3 grid gap-2 sm:grid-cols-3">
+        <input aria-label={`Table ${table.table_number} number`} type="number" min="1" value={number} onChange={(e) => setNumber(e.target.value)} className={inputCls} />
+        <input aria-label={`Table ${table.table_number} name`} value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" className={inputCls} />
+        <input aria-label={`Table ${table.table_number} seats`} type="number" min="1" value={seats} onChange={(e) => setSeats(e.target.value)} className={inputCls} />
+      </div>
+      <div className="mt-2 flex flex-wrap gap-2 text-xs">
+        <Btn size="sm" onClick={save}>Save</Btn>
+        {active ? (
+          <a
+            href={url}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center rounded-md border border-primary/40 px-2 py-1 font-semibold text-primary underline-offset-2 hover:underline"
+          >
+            Preview customer menu
+          </a>
+        ) : (
+          <span className="rounded-md border border-border px-2 py-1 text-muted-foreground">
+            Menu preview unavailable while inactive
+          </span>
+        )}
+        <button className="text-primary underline" onClick={downloadQr}>Download SVG</button>
+        <button className="text-primary underline" onClick={printQr}>Print</button>
+        <button className="text-muted-foreground underline" onClick={toggleStatus}>{active ? "Deactivate" : "Activate"}</button>
+      </div>
     </div>
   );
 }
@@ -207,7 +378,18 @@ function BootstrapOwner({ onComplete }: { onComplete: () => Promise<void> }) {
       toast.success("Restaurant and branch created");
       await onComplete();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Bootstrap failed");
+      if (isOwnerAlreadyBootstrappedError(error)) {
+        try {
+          await onComplete();
+          toast.success("Existing restaurant loaded");
+        } catch (refreshError) {
+          toast.error(
+            refreshError instanceof Error ? refreshError.message : "Could not load your restaurant",
+          );
+        }
+      } else {
+        toast.error(error instanceof Error ? error.message : "Bootstrap failed");
+      }
     } finally {
       setBusy(false);
     }
@@ -254,6 +436,15 @@ function BootstrapOwner({ onComplete }: { onComplete: () => Promise<void> }) {
         </div>
       </form>
     </Card>
+  );
+}
+
+function isOwnerAlreadyBootstrappedError(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+  const candidate = error as { code?: string; message?: string };
+  return (
+    candidate.message === "owner_already_bootstrapped" ||
+    (candidate.code === "23505" && candidate.message?.includes("owner_already_bootstrapped"))
   );
 }
 
