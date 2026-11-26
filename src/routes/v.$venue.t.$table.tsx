@@ -16,9 +16,11 @@ import { CATEGORY_LABEL, IMAGES } from "@/lib/images";
 import { formatINR, quickItems } from "@/lib/pricing";
 import type { MenuItem, Vibe, Weather } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { dataMode } from "@/lib/supabase";
+import { ProductionMenuPage } from "@/components/customer/ProductionMenuPage";
 
 export const Route = createFileRoute("/v/$venue/t/$table")({
-  validateSearch: (s: Record<string, unknown>) => ({ squad: typeof s.squad === "string" ? s.squad : undefined }),
+  validateSearch: (s: Record<string, unknown>) => ({ squad: typeof s.squad === "string" ? s.squad : undefined, branch: typeof s.branch === "string" ? s.branch : undefined }),
   head: ({ params }) => ({
     meta: [
       { title: `Table ${params.table} menu · Turntables` },
@@ -45,6 +47,13 @@ const WEATHER: { id: Weather; label: string; icon: typeof Sun }[] = [
 ];
 
 function MenuPage() {
+  const { venue: slug, table } = Route.useParams();
+  const search = Route.useSearch();
+  if (dataMode === "supabase") return <ProductionMenuPage branchSlug={search.branch} slug={slug} table={Number(table)} />;
+  return <DemoMenuPage />;
+}
+
+function DemoMenuPage() {
   const { venue: slug, table } = Route.useParams();
   const search = Route.useSearch();
   const ctx = useTable(slug, Number(table));
