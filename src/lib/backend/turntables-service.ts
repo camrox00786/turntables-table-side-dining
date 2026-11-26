@@ -457,3 +457,62 @@ export async function placeCustomerOrder(
     currency?: string;
   };
 }
+
+
+export type CustomerSessionOrder = {
+  order_id: string;
+  order_number: number;
+  status: "pending_payment" | "partially_paid" | "paid" | "preparing" | "ready" | "served" | "cancelled";
+  placed_at: string;
+  total_minor: number;
+  items: {
+    id: string;
+    item_name: string;
+    quantity: number;
+    unit_price_minor: number;
+    line_total_minor: number;
+    added_by_member_id: string;
+  }[];
+};
+
+export async function updateCustomerCartItem(input: {
+  customerToken: string;
+  sessionId: string;
+  cartItemId: string;
+  quantity: number;
+}) {
+  const supabase = requireSupabaseClient();
+  const { data, error } = await supabase.rpc("update_customer_cart_item", {
+    p_customer_token: input.customerToken,
+    p_session_id: input.sessionId,
+    p_cart_item_id: input.cartItemId,
+    p_quantity: input.quantity,
+  });
+  if (error) throw error;
+  return (data ?? []) as CustomerCartLine[];
+}
+
+export async function removeCustomerCartItem(input: {
+  customerToken: string;
+  sessionId: string;
+  cartItemId: string;
+}) {
+  const supabase = requireSupabaseClient();
+  const { data, error } = await supabase.rpc("remove_customer_cart_item", {
+    p_customer_token: input.customerToken,
+    p_session_id: input.sessionId,
+    p_cart_item_id: input.cartItemId,
+  });
+  if (error) throw error;
+  return (data ?? []) as CustomerCartLine[];
+}
+
+export async function loadCustomerSessionOrders(customerToken: string, sessionId: string) {
+  const supabase = requireSupabaseClient();
+  const { data, error } = await supabase.rpc("get_customer_session_orders", {
+    p_customer_token: customerToken,
+    p_session_id: sessionId,
+  });
+  if (error) throw error;
+  return (data ?? []) as CustomerSessionOrder[];
+}
